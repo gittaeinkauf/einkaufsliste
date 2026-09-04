@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f4f5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Einkaufsliste">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Gemeinsame Einkaufsliste</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}
+    body{margin:0;background:#f4f4f5;color:#18181b} main{max-width:720px;margin:auto;padding:18px}
+    h1{font-size:1.7rem;margin:0 0 8px}.status{font-size:.85rem;color:#71717a;margin-bottom:14px}
+    form{display:flex;gap:8px;margin-bottom:12px}input,button{font:inherit}
+    input[type=text]{flex:1;min-width:0;padding:12px;border:1px solid #d4d4d8;border-radius:12px;background:white;color:#18181b}
+    button{min-height:44px;border:1px solid #d4d4d8;border-radius:12px;background:white;color:#18181b;padding:8px 12px}
+    .primary{background:#18181b;color:white;border-color:#18181b}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#52525b;font-size:.9rem;margin:12px 0}
+    ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}li{display:flex;align-items:center;gap:8px;background:white;border:1px solid #e4e4e7;border-radius:14px;padding:8px}
+    .name{flex:1;min-width:0;overflow-wrap:anywhere}.done{text-decoration:line-through;color:#71717a}.hint{font-size:.75rem;color:#71717a}
+    .empty{text-align:center;color:#71717a;padding:28px 8px}details{margin-top:18px;color:#52525b}
+    @media(prefers-color-scheme:dark){body{background:#18181b;color:#fafafa}input[type=text],button,li{background:#27272a;color:#fafafa;border-color:#3f3f46}.primary{background:#fafafa;color:#18181b;border-color:#fafafa}.status,.top,.hint,.empty,details{color:#a1a1aa}}
+  </style>
+</head>
+<body>
+<main>
+  <h1>🛒 Einkaufsliste</h1>
+  <div id="status" class="status">Verbinde gemeinsame Liste …</div>
+  <form id="form">
+    <input id="input" type="text" placeholder="z. B. Käse" autocomplete="off" aria-label="Artikel">
+    <button class="primary" type="submit">Hinzufügen</button>
+  </form>
+  <div class="top"><span id="count">0 Artikel</span><button id="clearDone" type="button">Erledigte löschen</button></div>
+  <ul id="list"></ul><div id="empty" class="empty">Deine Einkaufsliste ist leer.</div>
+  <details><summary>Gelernte Supermarkt-Reihenfolge</summary><p id="route"></p></details>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDKTvNYEu-EfOF78OgbpblXiGgQBDWRRkQ",
+  authDomain: "einkaufsliste-9a87c.firebaseapp.com",
+  databaseURL: "https://einkaufsliste-9a87c-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "einkaufsliste-9a87c",
+  storageBucket: "einkaufsliste-9a87c.firebasestorage.app",
+  messagingSenderId: "505788884531",
+  appId: "1:505788884531:web:3d78a0938c59751609e546"
+};
+
+const app=initializeApp(firebaseConfig), db=getDatabase(app), shared=ref(db,"sharedList");
+const form=document.querySelector("#form"), input=document.querySelector("#input"), list=document.querySelector("#list");
+const count=document.querySelector("#count"), empty=document.querySelector("#empty"), clearDone=document.querySelector("#clearDone");
+const routeEl=document.querySelector("#route"), status=document.querySelector("#status");
+let state={items:[],route:["Gurken","Tomaten","Toast","Milch","Getränke"]}, loaded=false;
+
+const norm=s=>String(s).trim().toLocaleLowerCase("de");
+const idx=n=>state.route.findIndex(x=>norm(x)===norm(n));
+const known=n=>idx(n)>=0;
+const id=()=>String(Date.now())+Math.random().toString(16).slice(2);
+async function save(){ await set(shared,state); }
+function sort(){state.items.sort((a,b)=>{const ai=idx(a.name),bi=idx(b.name);if(ai<0&&bi<0)return 0;if(ai<0)return-1;if(bi<0)return 1;return ai-bi})}
+function learn(){const names=state.items.map(x=>x.name),present=new Set(names.map(norm)),rest=state.route.filter(x=>!present.has(norm(x)));state.route=[...names,...rest].filter((n,i,a)=>a.findIndex(x=>norm(x)===norm(n))===i)}
+async function move(i,d){const t=i+d;if(t<0||t>=state.items.length)return;[state.items[i],state.items[t]]=[state.items[t],state.items[i]];learn();render();await save()}
+function render(){
+ list.innerHTML="";
+ state.items.forEach((item,i)=>{
+  const li=document.createElement("li"),check=document.createElement("input"),box=document.createElement("div"),label=document.createElement("div");
+  check.type="checkbox";check.checked=!!item.done;check.setAttribute("aria-label",item.name+" abhaken");
+  check.addEventListener("change",async()=>{item.done=check.checked;render();await save()});
+  box.className="name";label.textContent=item.name;if(item.done)label.className="done";box.append(label);
+  if(!known(item.name)){const h=document.createElement("div");h.className="hint";h.textContent="Neu · bitte einsortieren";box.append(h)}
+  const up=document.createElement("button");up.type="button";up.textContent="↑";up.disabled=i===0;up.addEventListener("click",()=>move(i,-1));
+  const down=document.createElement("button");down.type="button";down.textContent="↓";down.disabled=i===state.items.length-1;down.addEventListener("click",()=>move(i,1));
+  const del=document.createElement("button");del.type="button";del.textContent="✕";del.addEventListener("click",async()=>{state.items=state.items.filter(x=>x.id!==item.id);render();await save()});
+  li.append(check,box,up,down,del);list.append(li);
+ });
+ count.textContent=state.items.length===1?"1 Artikel":state.items.length+" Artikel";empty.hidden=state.items.length!==0;
+ clearDone.disabled=!state.items.some(x=>x.done);routeEl.textContent=state.route.join(" → ");
+}
+onValue(shared,async snap=>{
+ if(snap.exists()){const v=snap.val();state={items:Array.isArray(v.items)?v.items:[],route:Array.isArray(v.route)?v.route:state.route}}
+ else if(!loaded){await save()}
+ loaded=true;status.textContent="● Gemeinsame Liste synchronisiert";render();
+},err=>{status.textContent="Verbindung fehlgeschlagen: "+err.message});
+form.addEventListener("submit",async e=>{e.preventDefault();const name=input.value.trim();if(!name)return;if(state.items.some(x=>norm(x.name)===norm(name))){input.select();return}state.items.push({id:id(),name,done:false});sort();render();input.value="";await save()});
+clearDone.addEventListener("click",async()=>{state.items=state.items.filter(x=>!x.done);render();await save()});
+render();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js");
+</script>
+</body></html>
