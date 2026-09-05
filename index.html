@@ -46,8 +46,10 @@
     <div id="status" class="status">Verbinde gemeinsame Liste …</div>
     <form id="form">
       <input id="input" type="text" placeholder="z. B. Käse" autocomplete="off" aria-label="Artikel">
+      <button id="mic" type="button" aria-label="Spracheingabe">🎙️</button>
       <button class="primary" type="submit">Hinzufügen</button>
     </form>
+    <div id="speechStatus" class="status"></div>
     <div class="top"><span id="count">0 Artikel</span><button id="clearDone" type="button">Erledigte löschen</button></div>
     <ul id="list"></ul><div id="empty" class="empty">Deine Einkaufsliste ist leer.</div>
     <details><summary>Gelernte Supermarkt-Reihenfolge</summary><p id="route"></p></details>
@@ -77,6 +79,7 @@ const loginError=document.querySelector("#loginError"), logout=document.querySel
 const form=document.querySelector("#form"), input=document.querySelector("#input"), list=document.querySelector("#list");
 const count=document.querySelector("#count"), empty=document.querySelector("#empty"), clearDone=document.querySelector("#clearDone");
 const routeEl=document.querySelector("#route"), status=document.querySelector("#status");
+const mic=document.querySelector("#mic"), speechStatus=document.querySelector("#speechStatus");
 let state={items:[],route:["Gurken","Tomaten","Toast","Milch","Getränke"]}, loaded=false;
 
 const norm=s=>String(s).trim().toLocaleLowerCase("de");
@@ -111,9 +114,26 @@ function startSync(){
  unsubscribeDb=onValue(shared,async snap=>{
   if(snap.exists()){const v=snap.val();state={items:Array.isArray(v.items)?v.items:[],route:Array.isArray(v.route)?v.route:state.route}}
   else if(!loaded){await save()}
-  loaded=true;status.textContent="● Gemeinsame Liste synchronisiert";render();
+  loaded=true;status.textContent="● Gemeinsame Liste synchronisiert";render();await importPendingUrlItem();
  },err=>{status.textContent="Verbindung fehlgeschlagen: "+err.message});
 }
+let pendingUrlItem=null;
+function getUrlItem(){
+ const params=new URLSearchParams(location.search);
+ const value=(params.get("add")||"").trim();
+ return value || null;
+}
+pendingUrlItem=getUrlItem();
+
+async function importPendingUrlItem(){
+ if(!pendingUrlItem || !loaded || !auth.currentUser) return;
+ const name=pendingUrlItem;
+ pendingUrlItem=null;
+ await addNames([name]);
+ history.replaceState({},document.title,location.pathname);
+ speechStatus.textContent="Per Siri hinzugefügt: "+name;
+}
+
 onAuthStateChanged(auth,user=>{
  if(user){
   loginView.hidden=true;appView.hidden=false;userEmail.textContent=user.email||"Angemeldet";loginError.textContent="";startSync();
@@ -128,7 +148,41 @@ loginForm.addEventListener("submit",async e=>{
  catch(err){loginError.textContent="Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen."}
 });
 logout.addEventListener("click",()=>signOut(auth));
-form.addEventListener("submit",async e=>{e.preventDefault();const name=input.value.trim();if(!name)return;if(state.items.some(x=>norm(x.name)===norm(name))){input.select();return}state.items.push({id:id(),name,done:false});sort();render();input.value="";await save()});
+async function addNames(names){
+ let changed=false;
+ for(const raw of names){
+  const name=raw.trim().replace(/[.!?]+$/,"");
+  if(!name || state.items.some(x=>norm(x.name)===norm(name))) continue;
+  state.items.push({id:id(),name,done:false});changed=true;
+ }
+ if(changed){sort();render();await save()}
+}
+form.addEventListener("submit",async e=>{e.preventDefault();const name=input.value.trim();if(!name)return;await addNames([name]);input.value=""});
+
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SpeechRecognition){
+ mic.addEventListener("click",()=>{
+  input.focus();
+  speechStatus.textContent="Nutze bitte das Mikrofon der iPhone-Tastatur für die Spracheingabe.";
+ });
+}else{
+ const recognition=new SpeechRecognition();
+ recognition.lang="de-DE";recognition.interimResults=false;recognition.maxAlternatives=1;
+ mic.addEventListener("click",()=>{
+  speechStatus.textContent="Ich höre zu …";
+  try{recognition.start()}catch(e){}
+ });
+ recognition.onresult=async e=>{
+  const text=e.results[0][0].transcript.trim();
+  speechStatus.textContent="Erkannt: "+text;
+  const names=text.split(/\s*(?:,| und | sowie )\s*/i).filter(Boolean);
+  await addNames(names);
+ };
+ recognition.onerror=e=>{
+  speechStatus.textContent="Spracheingabe nicht verfügbar. Du kannst das Mikrofon der iPhone-Tastatur verwenden.";
+ };
+ recognition.onend=()=>{setTimeout(()=>{if(speechStatus.textContent==="Ich höre zu …")speechStatus.textContent=""},500)};
+}
 clearDone.addEventListener("click",async()=>{state.items=state.items.filter(x=>!x.done);render();await save()});
 render();
 if("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js");
