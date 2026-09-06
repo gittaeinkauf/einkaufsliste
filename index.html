@@ -350,23 +350,7 @@ function showToast(text){
 function autocompleteMatches(value){
  const q=norm(value);
  if(!q) return [];
-
- const score=name=>{
-   const n=norm(name);
-   if(n===q) return -1;
-   if(n.startsWith(q)) return 0;
-   const words=n.split(/\s+/);
-   if(words.some(w=>w.startsWith(q))) return 1;
-   if(n.includes(q)) return 2;
-   return 99;
- };
-
- return state.route
-   .map((name,routeIndex)=>({name,routeIndex,score:score(name)}))
-   .filter(x=>x.score<99)
-   .sort((a,b)=>a.score-b.score||a.routeIndex-b.routeIndex)
-   .slice(0,5)
-   .map(x=>x.name);
+ return state.route.filter(name=>norm(name).startsWith(q)&&norm(name)!==q).slice(0,5);
 }
 function hideSuggestions(){suggestions.hidden=true;suggestions.innerHTML=""}
 function showSuggestions(){
@@ -505,7 +489,7 @@ logout.addEventListener("click",()=>signOut(auth));
 async function addNames(names,notify=true){
  let changed=false,addedNames=[];
  for(const raw of names){
-  const name=raw.trim().replace(/[.!?]+$/,");
+  const name=raw.trim().replace(/[.!?]+$/,"");
   if(!name||state.items.some(x=>norm(x.name)===norm(name)))continue;
   state.items.push({id:id(),name,done:false});changed=true;addedNames.push(name);
  }
