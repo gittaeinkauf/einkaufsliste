@@ -3,40 +3,256 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f4f4f5">
+  <meta name="theme-color" content="#f5f8f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Einkaufsliste">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>Gemeinsame Einkaufsliste</title>
+  <title>Unsere Einkaufsliste</title>
   <style>
-    :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}
-    body{margin:0;background:#f4f4f5;color:#18181b} main{max-width:720px;margin:auto;padding:18px}
-    h1{font-size:1.7rem;margin:0 0 8px}.status{font-size:.85rem;color:#71717a;margin-bottom:14px}
-    form{display:flex;gap:8px;margin-bottom:12px}input,button{font:inherit}
-    input[type=text],input[type=email],input[type=password]{flex:1;min-width:0;padding:12px;border:1px solid #d4d4d8;border-radius:12px;background:white;color:#18181b}
-    .inputWrap{position:relative;flex:1;min-width:0}.inputWrap input{width:100%;box-sizing:border-box}
-    .suggestions{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);background:white;border:1px solid #d4d4d8;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
-    .suggestion{display:block;width:100%;min-height:42px;border:0;border-radius:0;text-align:left;padding:10px 12px;background:white;color:#18181b}
-    .suggestion+.suggestion{border-top:1px solid #e4e4e7}.suggestion strong{font-weight:700}
-    #login{display:grid;gap:10px;max-width:440px;margin-top:18px}
-    #login input{width:100%;box-sizing:border-box}
-    .userbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;font-size:.85rem;color:#71717a}
+    :root{
+      font-family:Inter,ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+      color:#18312a;
+      background:#f5f8f3;
+      font-synthesis:none;
+      --bg:#f5f8f3;
+      --card:rgba(255,255,255,.88);
+      --card-solid:#fff;
+      --text:#18312a;
+      --muted:#718078;
+      --line:#e3ebe4;
+      --green:#2f9a61;
+      --green-dark:#257b4e;
+      --green-soft:#e7f5eb;
+      --lime:#eff8d9;
+      --shadow:0 14px 38px rgba(44,72,57,.08);
+      --shadow-soft:0 7px 24px rgba(44,72,57,.07);
+    }
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg)}
+    body{
+      margin:0;min-height:100vh;color:var(--text);
+      background:
+        radial-gradient(circle at 5% 0%,rgba(213,239,207,.8),transparent 30rem),
+        radial-gradient(circle at 100% 18%,rgba(231,244,214,.7),transparent 28rem),
+        linear-gradient(180deg,#fbfdf9 0%,#f3f7f1 100%);
+    }
+    button,input{font:inherit}
+    button{-webkit-tap-highlight-color:transparent}
     [hidden]{display:none!important}
-    button{min-height:44px;border:1px solid #d4d4d8;border-radius:12px;background:white;color:#18181b;padding:8px 12px}
-    .primary{background:#18181b;color:white;border-color:#18181b}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#52525b;font-size:.9rem;margin:12px 0}
-    ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}li{display:flex;align-items:center;gap:8px;background:white;border:1px solid #e4e4e7;border-radius:14px;padding:8px}
-    .name{flex:1;min-width:0;overflow-wrap:anywhere}.done{text-decoration:line-through;color:#71717a}.hint{font-size:.75rem;color:#71717a}
-    .empty{text-align:center;color:#71717a;padding:28px 8px}details{margin-top:18px;color:#52525b}
-    @media(prefers-color-scheme:dark){body{background:#18181b;color:#fafafa}input[type=text],input[type=email],input[type=password],button,li{background:#27272a;color:#fafafa;border-color:#3f3f46}.primary{background:#fafafa;color:#18181b;border-color:#fafafa}.status,.top,.hint,.empty,details{color:#a1a1aa}.suggestions,.suggestion{background:#27272a;color:#fafafa;border-color:#3f3f46}.suggestion+.suggestion{border-top-color:#3f3f46}}
+    main{
+      width:min(100%,680px);
+      margin:0 auto;
+      padding:calc(18px + env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom));
+    }
+
+    .hero{
+      display:flex;align-items:center;gap:12px;margin:3px 2px 20px;
+    }
+    .appIcon{
+      width:52px;height:52px;flex:0 0 52px;border-radius:17px;
+      display:grid;place-items:center;font-size:26px;
+      background:linear-gradient(145deg,#f0f8df,#fff7d4);
+      box-shadow:var(--shadow-soft);border:1px solid rgba(255,255,255,.7);
+    }
+    .heroText{min-width:0;flex:1}
+    h1{font-size:1.75rem;line-height:1.02;letter-spacing:-.045em;margin:0;font-weight:820}
+    .subtitle{margin-top:5px;color:var(--muted);font-size:.88rem}
+    .onlinePill{
+      display:flex;align-items:center;gap:7px;white-space:nowrap;
+      padding:9px 11px;border-radius:999px;background:rgba(231,245,235,.9);
+      color:var(--green-dark);font-weight:700;font-size:.76rem;border:1px solid #d9ecdd;
+    }
+    .onlinePill::before{content:"";width:8px;height:8px;border-radius:50%;background:#37ad69;box-shadow:0 0 0 4px rgba(55,173,105,.12)}
+
+    .card{
+      background:var(--card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+      border:1px solid rgba(255,255,255,.82);box-shadow:var(--shadow);
+      border-radius:25px;
+    }
+
+    #loginView{padding:20px}
+    .loginIntro{font-size:1.05rem;font-weight:760;margin-bottom:5px}
+    .status{font-size:.8rem;color:var(--muted);line-height:1.45}
+    #login{display:grid;gap:10px;margin-top:17px}
+    input[type=text],input[type=email],input[type=password]{
+      width:100%;min-width:0;border:1px solid var(--line);outline:none;
+      background:rgba(255,255,255,.96);color:var(--text);
+      padding:14px 15px;border-radius:15px;min-height:50px;
+      transition:border-color .18s,box-shadow .18s,background .18s;
+    }
+    input:focus{border-color:#a9d4b7;box-shadow:0 0 0 4px rgba(47,154,97,.10);background:#fff}
+
+    .primary{
+      border:0;background:linear-gradient(145deg,var(--green),#248854);color:#fff;
+      font-weight:780;box-shadow:0 8px 18px rgba(47,154,97,.22);
+    }
+    #login .primary{min-height:50px;border-radius:15px}
+
+    .appTop{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin:0 2px 11px;
+    }
+    .sync{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.77rem;min-width:0}
+    .sync::before{content:"";width:7px;height:7px;border-radius:50%;background:#41ad6b;flex:0 0 7px}
+    .userActions{display:flex;align-items:center;gap:7px}
+    .userChip{
+      max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      font-size:.72rem;color:var(--muted);background:rgba(255,255,255,.65);padding:7px 9px;border-radius:999px;
+    }
+    .ghostBtn{
+      border:1px solid var(--line);background:rgba(255,255,255,.72);color:var(--text);
+      min-height:36px;padding:7px 10px;border-radius:12px;font-size:.76rem;font-weight:680;
+    }
+
+    .addCard{padding:14px;margin-bottom:14px;position:relative;z-index:5}
+    .formLabel{font-size:.76rem;color:var(--muted);font-weight:720;margin:2px 4px 9px}
+    #form{display:flex;gap:9px;margin:0;align-items:stretch}
+    .inputWrap{position:relative;flex:1;min-width:0}
+    .inputWrap input{height:54px;border-radius:17px;padding-left:16px}
+    .roundBtn{
+      width:54px;min-width:54px;height:54px;border-radius:17px;border:1px solid var(--line);
+      background:#fff;color:var(--text);font-size:1.25rem;display:grid;place-items:center;
+      box-shadow:0 4px 14px rgba(44,72,57,.05);
+    }
+    #form .primary{
+      width:54px;min-width:54px;height:54px;border-radius:17px;font-size:1.75rem;line-height:1;
+      display:grid;place-items:center;padding:0;
+    }
+
+    .suggestions{
+      position:absolute;z-index:30;left:0;right:0;top:calc(100% + 7px);
+      background:rgba(255,255,255,.98);border:1px solid var(--line);border-radius:17px;
+      box-shadow:0 16px 35px rgba(33,62,47,.15);overflow:hidden;padding:5px;
+    }
+    .suggestion{
+      display:block;width:100%;border:0;border-radius:12px;text-align:left;
+      padding:11px 12px;background:transparent;color:var(--text);min-height:44px;
+    }
+    .suggestion:active{background:var(--green-soft)}
+    .suggestion strong{font-weight:820;color:var(--green-dark)}
+
+    #speechStatus{min-height:0;margin:8px 4px 0}
+    #speechStatus:empty{display:none}
+
+    .listCard{padding:8px;margin-bottom:14px}
+    .listHead{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 10px 8px 12px;
+    }
+    .listHeadLeft{display:flex;align-items:baseline;gap:8px}
+    .listTitle{font-weight:820;letter-spacing:-.02em}
+    #count{font-size:.75rem;color:var(--muted);font-weight:650}
+    #clearDone{border:0;background:transparent;color:var(--green-dark);font-size:.73rem;font-weight:760;padding:8px}
+    #clearDone:disabled{opacity:.35}
+
+    ul{list-style:none;padding:0;margin:0;display:grid;gap:3px}
+    li{
+      display:flex;align-items:center;gap:10px;min-height:62px;padding:9px 9px 9px 11px;
+      border-radius:18px;background:rgba(255,255,255,.62);border:1px solid transparent;
+    }
+    li+li{margin-top:2px}
+    li:has(.done){opacity:.62}
+    .check{
+      appearance:none;-webkit-appearance:none;width:24px;height:24px;flex:0 0 24px;
+      border:2px solid #b8c5bc;border-radius:8px;background:#fff;margin:0;display:grid;place-items:center;
+      transition:.15s;
+    }
+    .check:checked{background:var(--green);border-color:var(--green)}
+    .check:checked::after{content:"✓";color:#fff;font-size:15px;font-weight:900;line-height:1}
+    .name{flex:1;min-width:0;font-size:.98rem;font-weight:690;letter-spacing:-.01em;overflow-wrap:anywhere}
+    .done{text-decoration:line-through;color:var(--muted)}
+    .hint{
+      display:inline-block;margin-top:4px;padding:3px 7px;border-radius:999px;
+      background:#fff4da;color:#9b6817;font-size:.65rem;font-weight:760;
+    }
+    .rowActions{display:flex;align-items:center;gap:4px}
+    .miniBtn{
+      width:34px;height:34px;border:0;border-radius:11px;background:transparent;color:#829087;
+      display:grid;place-items:center;padding:0;font-weight:800;font-size:.93rem;
+    }
+    .miniBtn:disabled{opacity:.18}
+    .deleteBtn{font-size:.82rem}
+    .miniBtn:active{background:#eef3ef}
+
+    .empty{
+      text-align:center;padding:38px 18px 42px;color:var(--muted);
+    }
+    .emptyIcon{
+      width:64px;height:64px;border-radius:22px;margin:0 auto 13px;
+      background:linear-gradient(145deg,#edf7e7,#fff9df);display:grid;place-items:center;font-size:29px;
+    }
+    .empty strong{display:block;color:var(--text);font-size:1rem;margin-bottom:5px}
+
+    .routeCard{overflow:hidden}
+    details{color:var(--muted)}
+    summary{
+      list-style:none;cursor:pointer;padding:16px 18px;color:var(--text);font-weight:750;font-size:.86rem;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    summary::-webkit-details-marker{display:none}
+    summary::after{content:"⌄";color:var(--muted);font-size:1.1rem}
+    details[open] summary::after{transform:rotate(180deg)}
+    #route{margin:0;padding:0 18px 18px;line-height:1.7;font-size:.79rem}
+
+    .toast{
+      position:fixed;z-index:100;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));
+      transform:translate(-50%,20px);opacity:0;pointer-events:none;
+      max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      padding:12px 16px;border-radius:999px;background:#173d2b;color:#fff;font-size:.82rem;font-weight:750;
+      box-shadow:0 12px 32px rgba(23,61,43,.24);transition:.22s ease;
+    }
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+
+    @media(max-width:480px){
+      main{padding-left:12px;padding-right:12px}
+      h1{font-size:1.58rem}
+      .appIcon{width:48px;height:48px;flex-basis:48px;border-radius:15px}
+      .onlinePill{padding:8px 9px;font-size:.7rem}
+      .userChip{display:none}
+      .rowActions{gap:0}
+      .miniBtn{width:31px}
+    }
+
+    @media(prefers-color-scheme:dark){
+      :root{
+        --bg:#111814;--card:rgba(29,39,33,.88);--card-solid:#1d2721;--text:#f0f6f1;
+        --muted:#9aa89f;--line:#33423a;--green:#47b979;--green-dark:#72d294;--green-soft:#213d2d;
+        --shadow:0 16px 38px rgba(0,0,0,.22);--shadow-soft:0 8px 24px rgba(0,0,0,.18);
+      }
+      body{
+        background:
+          radial-gradient(circle at 0 0,rgba(45,89,59,.28),transparent 28rem),
+          linear-gradient(180deg,#151c17,#111814);
+      }
+      .appIcon{background:linear-gradient(145deg,#263b2b,#3a3c26);border-color:#314436}
+      input[type=text],input[type=email],input[type=password],.roundBtn{background:#202b24;color:var(--text)}
+      input:focus{background:#202b24}
+      .onlinePill{background:#203a29;border-color:#2d4936}
+      .ghostBtn,.userChip{background:rgba(32,43,36,.8)}
+      .suggestions{background:#202b24}
+      li{background:rgba(32,43,36,.62)}
+      .check{background:#1c261f}
+      .miniBtn:active{background:#2a372e}
+      .hint{background:#49391e;color:#f0c36b}
+      .toast{background:#dff5e6;color:#173d2b}
+    }
   </style>
 </head>
 <body>
 <main>
-  <h1>🛒 Einkaufsliste</h1>
+  <header class="hero">
+    <div class="appIcon">🛒</div>
+    <div class="heroText">
+      <h1>Unsere Einkaufsliste</h1>
+      <div class="subtitle">Gemeinsam. Schnell. Sortiert.</div>
+    </div>
+    <div class="onlinePill">Live</div>
+  </header>
 
-  <section id="loginView">
-    <div class="status">Bitte mit eurem Einkaufsliste-Konto anmelden.</div>
+  <section id="loginView" class="card">
+    <div class="loginIntro">Willkommen zurück 👋</div>
+    <div class="status">Melde dich mit eurem Einkaufsliste-Konto an.</div>
     <form id="login">
       <input id="email" type="email" placeholder="E-Mail-Adresse" autocomplete="username" required>
       <input id="password" type="password" placeholder="Passwort" autocomplete="current-password" required>
@@ -46,22 +262,49 @@
   </section>
 
   <section id="appView" hidden>
-    <div class="userbar"><span id="userEmail"></span><button id="logout" type="button">Abmelden</button></div>
-    <div id="status" class="status">Verbinde gemeinsame Liste …</div>
-    <form id="form">
-      <div class="inputWrap">
-        <input id="input" type="text" placeholder="z. B. Käse" autocomplete="off" aria-label="Artikel" aria-autocomplete="list" aria-controls="suggestions">
-        <div id="suggestions" class="suggestions" role="listbox" hidden></div>
+    <div class="appTop">
+      <div id="status" class="sync">Verbinde gemeinsame Liste …</div>
+      <div class="userActions">
+        <span id="userEmail" class="userChip"></span>
+        <button id="logout" class="ghostBtn" type="button">Abmelden</button>
       </div>
-      <button id="mic" type="button" aria-label="Spracheingabe">🎙️</button>
-      <button class="primary" type="submit">Hinzufügen</button>
-    </form>
-    <div id="speechStatus" class="status"></div>
-    <div class="top"><span id="count">0 Artikel</span><button id="clearDone" type="button">Erledigte löschen</button></div>
-    <ul id="list"></ul><div id="empty" class="empty">Deine Einkaufsliste ist leer.</div>
-    <details><summary>Gelernte Supermarkt-Reihenfolge</summary><p id="route"></p></details>
+    </div>
+
+    <section class="card addCard">
+      <div class="formLabel">Was fehlt noch?</div>
+      <form id="form">
+        <div class="inputWrap">
+          <input id="input" type="text" placeholder="Artikel hinzufügen …" autocomplete="off" aria-label="Artikel" aria-autocomplete="list" aria-controls="suggestions">
+          <div id="suggestions" class="suggestions" role="listbox" hidden></div>
+        </div>
+        <button id="mic" class="roundBtn" type="button" aria-label="Spracheingabe">🎙️</button>
+        <button class="primary" type="submit" aria-label="Artikel hinzufügen">+</button>
+      </form>
+      <div id="speechStatus" class="status"></div>
+    </section>
+
+    <section class="card listCard">
+      <div class="listHead">
+        <div class="listHeadLeft"><span class="listTitle">Einkauf</span><span id="count">0 Artikel</span></div>
+        <button id="clearDone" type="button">Erledigte löschen</button>
+      </div>
+      <ul id="list"></ul>
+      <div id="empty" class="empty">
+        <div class="emptyIcon">🥕</div>
+        <strong>Alles erledigt</strong>
+        Deine Einkaufsliste ist gerade leer.
+      </div>
+    </section>
+
+    <section class="card routeCard">
+      <details>
+        <summary>Gelernte Supermarkt-Reihenfolge</summary>
+        <p id="route"></p>
+      </details>
+    </section>
   </section>
 </main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
@@ -80,44 +323,48 @@ const firebaseConfig = {
 
 const app=initializeApp(firebaseConfig), db=getDatabase(app), shared=ref(db,"sharedList"), auth=getAuth(app);
 setPersistence(auth,browserLocalPersistence).catch(()=>{});
+
 const loginView=document.querySelector("#loginView"), appView=document.querySelector("#appView");
 const loginForm=document.querySelector("#login"), email=document.querySelector("#email"), password=document.querySelector("#password");
 const loginError=document.querySelector("#loginError"), logout=document.querySelector("#logout"), userEmail=document.querySelector("#userEmail");
 const form=document.querySelector("#form"), input=document.querySelector("#input"), list=document.querySelector("#list");
-const suggestions=document.querySelector("#suggestions");
+const suggestions=document.querySelector("#suggestions"), toast=document.querySelector("#toast");
 const count=document.querySelector("#count"), empty=document.querySelector("#empty"), clearDone=document.querySelector("#clearDone");
 const routeEl=document.querySelector("#route"), status=document.querySelector("#status");
 const mic=document.querySelector("#mic"), speechStatus=document.querySelector("#speechStatus");
 let state={items:[],route:["Gurken","Tomaten","Toast","Milch","Getränke"]}, loaded=false;
+let toastTimer;
 
 const norm=s=>String(s).trim().toLocaleLowerCase("de");
 const idx=n=>state.route.findIndex(x=>norm(x)===norm(n));
 const known=n=>idx(n)>=0;
 const id=()=>String(Date.now())+Math.random().toString(16).slice(2);
 
+function showToast(text){
+  toast.textContent=text;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove("show"),2200);
+}
+
 function autocompleteMatches(value){
  const q=norm(value);
  if(!q) return [];
- return state.route
-   .filter(name=>norm(name).startsWith(q) && norm(name)!==q)
-   .slice(0,5);
+ return state.route.filter(name=>norm(name).startsWith(q)&&norm(name)!==q).slice(0,5);
 }
-function hideSuggestions(){suggestions.hidden=true;suggestions.innerHTML="";}
+function hideSuggestions(){suggestions.hidden=true;suggestions.innerHTML=""}
 function showSuggestions(){
- const value=input.value.trim(), matches=autocompleteMatches(value);
+ const value=input.value.trim(),matches=autocompleteMatches(value);
  suggestions.innerHTML="";
  if(!matches.length){hideSuggestions();return}
  matches.forEach(name=>{
    const b=document.createElement("button");
    b.type="button";b.className="suggestion";b.setAttribute("role","option");
    const q=value.length;
-   const before=document.createTextNode(name.slice(0,q));
-   const strong=document.createElement("strong");strong.textContent=name.slice(q);
-   b.append(before,strong);
+   b.append(document.createTextNode(name.slice(0,q)));
+   const strong=document.createElement("strong");strong.textContent=name.slice(q);b.append(strong);
    b.addEventListener("pointerdown",e=>e.preventDefault());
-   b.addEventListener("click",()=>{
-     input.value=name;hideSuggestions();input.focus();
-   });
+   b.addEventListener("click",()=>{input.value=name;hideSuggestions();input.focus()});
    suggestions.append(b);
  });
  suggestions.hidden=false;
@@ -125,68 +372,104 @@ function showSuggestions(){
 input.addEventListener("input",showSuggestions);
 input.addEventListener("focus",showSuggestions);
 input.addEventListener("keydown",e=>{
- if(e.key==="Escape") hideSuggestions();
- if(e.key==="Tab" && !suggestions.hidden){
+ if(e.key==="Escape")hideSuggestions();
+ if(e.key==="Tab"&&!suggestions.hidden){
    const first=suggestions.querySelector(".suggestion");
    if(first){e.preventDefault();input.value=first.textContent;hideSuggestions()}
  }
 });
-document.addEventListener("pointerdown",e=>{
- if(!e.target.closest(".inputWrap")) hideSuggestions();
-});
+document.addEventListener("pointerdown",e=>{if(!e.target.closest(".inputWrap"))hideSuggestions()});
 
-async function save(){ await set(shared,state); }
-function sort(){state.items.sort((a,b)=>{const ai=idx(a.name),bi=idx(b.name);if(ai<0&&bi<0)return 0;if(ai<0)return-1;if(bi<0)return 1;return ai-bi})}
-function learn(){const names=state.items.map(x=>x.name),present=new Set(names.map(norm)),rest=state.route.filter(x=>!present.has(norm(x)));state.route=[...names,...rest].filter((n,i,a)=>a.findIndex(x=>norm(x)===norm(n))===i)}
-async function move(i,d){const t=i+d;if(t<0||t>=state.items.length)return;[state.items[i],state.items[t]]=[state.items[t],state.items[i]];learn();render();await save()}
+async function save(){await set(shared,state)}
+function sort(){
+ state.items.sort((a,b)=>{
+   const ai=idx(a.name),bi=idx(b.name);
+   if(ai<0&&bi<0)return 0;
+   if(ai<0)return-1;
+   if(bi<0)return 1;
+   return ai-bi;
+ });
+}
+function learn(){
+ const names=state.items.map(x=>x.name),present=new Set(names.map(norm));
+ const rest=state.route.filter(x=>!present.has(norm(x)));
+ state.route=[...names,...rest].filter((n,i,a)=>a.findIndex(x=>norm(x)===norm(n))===i);
+}
+async function move(i,d){
+ const t=i+d;if(t<0||t>=state.items.length)return;
+ [state.items[i],state.items[t]]=[state.items[t],state.items[i]];
+ learn();render();await save();
+}
+function makeMiniButton(text,label,disabled,handler,extra=""){
+ const b=document.createElement("button");
+ b.type="button";b.className=("miniBtn "+extra).trim();b.textContent=text;b.disabled=disabled;
+ b.setAttribute("aria-label",label);b.addEventListener("click",handler);return b;
+}
 function render(){
  list.innerHTML="";
  state.items.forEach((item,i)=>{
-  const li=document.createElement("li"),check=document.createElement("input"),box=document.createElement("div"),label=document.createElement("div");
-  check.type="checkbox";check.checked=!!item.done;check.setAttribute("aria-label",item.name+" abhaken");
+  const li=document.createElement("li");
+  const check=document.createElement("input");
+  check.type="checkbox";check.className="check";check.checked=!!item.done;
+  check.setAttribute("aria-label",item.name+" abhaken");
   check.addEventListener("change",async()=>{item.done=check.checked;render();await save()});
+
+  const box=document.createElement("div"),label=document.createElement("div");
   box.className="name";label.textContent=item.name;if(item.done)label.className="done";box.append(label);
-  if(!known(item.name)){const h=document.createElement("div");h.className="hint";h.textContent="Neu · bitte einsortieren";box.append(h)}
-  const up=document.createElement("button");up.type="button";up.textContent="↑";up.disabled=i===0;up.addEventListener("click",()=>move(i,-1));
-  const down=document.createElement("button");down.type="button";down.textContent="↓";down.disabled=i===state.items.length-1;down.addEventListener("click",()=>move(i,1));
-  const del=document.createElement("button");del.type="button";del.textContent="✕";del.addEventListener("click",async()=>{state.items=state.items.filter(x=>x.id!==item.id);render();await save()});
-  li.append(check,box,up,down,del);list.append(li);
+  if(!known(item.name)){
+    const h=document.createElement("div");h.className="hint";h.textContent="Neu · einsortieren";box.append(h);
+  }
+
+  const actions=document.createElement("div");actions.className="rowActions";
+  const up=makeMiniButton("↑",item.name+" nach oben",i===0,()=>move(i,-1));
+  const down=makeMiniButton("↓",item.name+" nach unten",i===state.items.length-1,()=>move(i,1));
+  const del=makeMiniButton("✕",item.name+" löschen",false,async()=>{
+    state.items=state.items.filter(x=>x.id!==item.id);render();await save();
+  },"deleteBtn");
+  actions.append(up,down,del);
+  li.append(check,box,actions);list.append(li);
  });
- count.textContent=state.items.length===1?"1 Artikel":state.items.length+" Artikel";empty.hidden=state.items.length!==0;
- clearDone.disabled=!state.items.some(x=>x.done);routeEl.textContent=state.route.join(" → ");
- if(document.activeElement===input) showSuggestions();
+
+ count.textContent=state.items.length===1?"1 Artikel":state.items.length+" Artikel";
+ empty.hidden=state.items.length!==0;
+ clearDone.disabled=!state.items.some(x=>x.done);
+ routeEl.textContent=state.route.join(" → ");
+ if(document.activeElement===input)showSuggestions();
 }
+
 let unsubscribeDb=null;
 function startSync(){
- if(unsubscribeDb) unsubscribeDb();
- loaded=false;
- status.textContent="Verbinde gemeinsame Liste …";
+ if(unsubscribeDb)unsubscribeDb();
+ loaded=false;status.textContent="Verbinde gemeinsame Liste …";
  unsubscribeDb=onValue(shared,async snap=>{
-  if(snap.exists()){const v=snap.val();state={items:Array.isArray(v.items)?v.items:[],route:Array.isArray(v.route)?v.route:state.route}}
-  else if(!loaded){await save()}
-  loaded=true;status.textContent="● Gemeinsame Liste synchronisiert";render();await importPendingUrlItem();
+  if(snap.exists()){
+    const v=snap.val();
+    state={items:Array.isArray(v.items)?v.items:[],route:Array.isArray(v.route)?v.route:state.route};
+  }else if(!loaded){await save()}
+  loaded=true;status.textContent="Gemeinsame Liste synchronisiert";render();await importPendingUrlItem();
  },err=>{status.textContent="Verbindung fehlgeschlagen: "+err.message});
 }
+
 let pendingUrlItem=null;
 function getUrlItem(){
  const params=new URLSearchParams(location.search);
  const value=(params.get("add")||"").trim();
- return value || null;
+ return value||null;
 }
 pendingUrlItem=getUrlItem();
 
 async function importPendingUrlItem(){
- if(!pendingUrlItem || !loaded || !auth.currentUser) return;
- const name=pendingUrlItem;
- pendingUrlItem=null;
- await addNames([name]);
+ if(!pendingUrlItem||!loaded||!auth.currentUser)return;
+ const name=pendingUrlItem;pendingUrlItem=null;
+ const added=await addNames([name],false);
  history.replaceState({},document.title,location.pathname);
- speechStatus.textContent="Per Siri hinzugefügt: "+name;
+ if(added)showToast("✓ "+name+" hinzugefügt");
 }
 
 onAuthStateChanged(auth,user=>{
  if(user){
-  loginView.hidden=true;appView.hidden=false;userEmail.textContent=user.email||"Angemeldet";loginError.textContent="";startSync();
+  loginView.hidden=true;appView.hidden=false;userEmail.textContent=user.email||"Angemeldet";
+  loginError.textContent="";startSync();
  }else{
   if(unsubscribeDb){unsubscribeDb();unsubscribeDb=null}
   loginView.hidden=false;appView.hidden=true;userEmail.textContent="";
@@ -194,26 +477,38 @@ onAuthStateChanged(auth,user=>{
 });
 loginForm.addEventListener("submit",async e=>{
  e.preventDefault();loginError.textContent="Anmeldung …";
- try{await signInWithEmailAndPassword(auth,email.value.trim(),password.value);password.value="";loginError.textContent=""}
- catch(err){loginError.textContent="Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen."}
+ try{
+   await signInWithEmailAndPassword(auth,email.value.trim(),password.value);
+   password.value="";loginError.textContent="";
+ }catch(err){
+   loginError.textContent="Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.";
+ }
 });
 logout.addEventListener("click",()=>signOut(auth));
-async function addNames(names){
- let changed=false;
+
+async function addNames(names,notify=true){
+ let changed=false,addedNames=[];
  for(const raw of names){
   const name=raw.trim().replace(/[.!?]+$/,"");
-  if(!name || state.items.some(x=>norm(x.name)===norm(name))) continue;
-  state.items.push({id:id(),name,done:false});changed=true;
+  if(!name||state.items.some(x=>norm(x.name)===norm(name)))continue;
+  state.items.push({id:id(),name,done:false});changed=true;addedNames.push(name);
  }
- if(changed){sort();render();await save()}
+ if(changed){
+   sort();render();await save();
+   if(notify)showToast(addedNames.length===1?"✓ "+addedNames[0]+" hinzugefügt":"✓ "+addedNames.length+" Artikel hinzugefügt");
+ }
+ return changed;
 }
-form.addEventListener("submit",async e=>{e.preventDefault();const name=input.value.trim();if(!name)return;hideSuggestions();await addNames([name]);input.value=""});
+
+form.addEventListener("submit",async e=>{
+ e.preventDefault();const name=input.value.trim();if(!name)return;
+ hideSuggestions();await addNames([name]);input.value="";input.focus();
+});
 
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 if(!SpeechRecognition){
  mic.addEventListener("click",()=>{
-  input.focus();
-  speechStatus.textContent="Nutze bitte das Mikrofon der iPhone-Tastatur für die Spracheingabe.";
+  input.focus();speechStatus.textContent="Nutze das Mikrofon der iPhone-Tastatur für die Spracheingabe.";
  });
 }else{
  const recognition=new SpeechRecognition();
@@ -224,17 +519,21 @@ if(!SpeechRecognition){
  });
  recognition.onresult=async e=>{
   const text=e.results[0][0].transcript.trim();
-  speechStatus.textContent="Erkannt: "+text;
+  speechStatus.textContent="";
   const names=text.split(/\s*(?:,| und | sowie )\s*/i).filter(Boolean);
   await addNames(names);
  };
- recognition.onerror=e=>{
-  speechStatus.textContent="Spracheingabe nicht verfügbar. Du kannst das Mikrofon der iPhone-Tastatur verwenden.";
- };
+ recognition.onerror=()=>{speechStatus.textContent="Spracheingabe nicht verfügbar. Nutze das Mikrofon der iPhone-Tastatur."};
  recognition.onend=()=>{setTimeout(()=>{if(speechStatus.textContent==="Ich höre zu …")speechStatus.textContent=""},500)};
 }
-clearDone.addEventListener("click",async()=>{state.items=state.items.filter(x=>!x.done);render();await save()});
+clearDone.addEventListener("click",async()=>{
+ state.items=state.items.filter(x=>!x.done);render();await save();showToast("Erledigte Artikel entfernt");
+});
 render();
-if("serviceWorker" in navigator) navigator.serviceWorker.register("./service-worker.js");
+
+if("serviceWorker" in navigator){
+ navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
+}
 </script>
-</body></html>
+</body>
+</html>
